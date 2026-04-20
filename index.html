@@ -149,6 +149,7 @@
         addDoc(collection(db, "respuestas"), {
           respuesta: "si",
           createdAt: serverTimestamp(),
+          createdAtClient: Date.now(),
           userAgent: navigator.userAgent
         }).catch((error) => {
           console.error("No se pudo guardar en Firestore:", error);

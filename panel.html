@@ -97,7 +97,7 @@
     } else {
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
-      const q = query(collection(db, "respuestas"), orderBy("createdAt", "desc"), limit(1));
+      const q = query(collection(db, "respuestas"), orderBy("createdAtClient", "desc"), limit(1));
 
       onSnapshot(q, (snapshot) => {
         if (snapshot.empty) {
@@ -109,7 +109,9 @@
         const data = snapshot.docs[0].data();
         const dateText = data.createdAt?.toDate
           ? data.createdAt.toDate().toLocaleString()
-          : "Fecha no disponible";
+          : (data.createdAtClient
+            ? new Date(data.createdAtClient).toLocaleString()
+            : "Fecha no disponible");
 
         statusText.innerHTML = "<span class='yes'>Ella respondio SI</span>";
         metaText.textContent = `Ultima respuesta: ${dateText}`;
