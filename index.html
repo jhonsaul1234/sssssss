@@ -113,16 +113,47 @@
     </section>
   </main>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      addDoc,
+      collection,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
     const yesBtn = document.getElementById("yesBtn");
     const noBtn = document.getElementById("noBtn");
-    const buttonsWrap = document.getElementById("buttonsWrap");
     const step1 = document.getElementById("step1");
     const step2 = document.getElementById("step2");
 
+    let db = null;
     let yesScale = 1;
 
-    yesBtn.addEventListener("click", () => {
+    const hasFirebaseConfig = firebaseConfig && !firebaseConfig.apiKey.includes("PEGA_AQUI");
+    if (hasFirebaseConfig) {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } else {
+      console.warn("Firebase no configurado. Se muestra la animacion pero no se guarda respuesta.");
+    }
+
+    yesBtn.addEventListener("click", async () => {
+      yesBtn.disabled = true;
+
+      if (db) {
+        try {
+          await addDoc(collection(db, "respuestas"), {
+            respuesta: "si",
+            createdAt: serverTimestamp(),
+            userAgent: navigator.userAgent
+          });
+        } catch (error) {
+          console.error("No se pudo guardar en Firestore:", error);
+        }
+      }
+
       step1.classList.add("hidden");
       step2.classList.remove("hidden");
     });

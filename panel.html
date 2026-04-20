@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de respuestas</title>
+  <style>
+    :root {
+      --bg: #10131a;
+      --card: #1a2030;
+      --text: #e8ecf2;
+      --muted: #9da7b6;
+      --ok: #2ecb70;
+      --warn: #f6c85f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(560px, 100%);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    h1 {
+      font-size: 1.45rem;
+      margin-bottom: 16px;
+    }
+
+    .status {
+      margin-bottom: 14px;
+      font-size: 1rem;
+      color: var(--muted);
+    }
+
+    .yes {
+      color: var(--ok);
+      font-weight: bold;
+    }
+
+    .wait {
+      color: var(--warn);
+      font-weight: bold;
+    }
+
+    .meta {
+      margin-top: 14px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Estado de respuesta</h1>
+    <p class="status" id="statusText">Conectando con Firebase...</p>
+    <p class="meta" id="metaText"></p>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      orderBy,
+      limit,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const statusText = document.getElementById("statusText");
+    const metaText = document.getElementById("metaText");
+
+    const hasFirebaseConfig = firebaseConfig && !firebaseConfig.apiKey.includes("PEGA_AQUI");
+    if (!hasFirebaseConfig) {
+      statusText.innerHTML = "<span class='wait'>Firebase no configurado</span>";
+      metaText.textContent = "Abre firebase-config.js y pega tus credenciales del proyecto.";
+    } else {
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const q = query(collection(db, "respuestas"), orderBy("createdAt", "desc"), limit(1));
+
+      onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+          statusText.innerHTML = "<span class='wait'>Aun no hay respuesta</span>";
+          metaText.textContent = "Cuando ella presione 'Si', lo veras aqui.";
+          return;
+        }
+
+        const data = snapshot.docs[0].data();
+        const dateText = data.createdAt?.toDate
+          ? data.createdAt.toDate().toLocaleString()
+          : "Fecha no disponible";
+
+        statusText.innerHTML = "<span class='yes'>Ella respondio SI</span>";
+        metaText.textContent = `Ultima respuesta: ${dateText}`;
+      }, (error) => {
+        statusText.innerHTML = "<span class='wait'>Error de conexion</span>";
+        metaText.textContent = `Detalle: ${error.message}`;
+      });
+    }
+  </script>
+</body>
+</html>
